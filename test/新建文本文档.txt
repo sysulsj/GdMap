@@ -1,0 +1,199 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Text;
+using System.Windows.Forms;
+using DevExpress.XtraBars;
+using ArcGISHelperLibrary;
+using ESRI.ArcGIS.Controls;
+using GDMapDataHandleSYS.DataHandle;
+using System.Threading;
+using ESRI.ArcGIS.Geodatabase;
+using System.Runtime.InteropServices;
+using System.Diagnostics;
+
+namespace GDMapDataHandleSYS
+{
+    public partial class FrmMapMain : DevExpress.XtraBars.Ribbon.RibbonForm
+    {
+        private TOCContextMenu contextMenu;
+        private MapEventManage mapEventManage;
+        private LUtil.MultiBackgroundWorker mbg;
+        public FrmMapMain()
+        {
+            InitializeComponent();
+            #region 初始化地图工具
+            contextMenu = new TOCContextMenu(axMapControl1, axTOCControl1);
+            mapEventManage = new MapEventManage(axMapControl1);
+            MapToolbar.SetMapViewTool(axMapControl1, axToolbarControl2);
+            new MapToolbar().SetMiddleMousePan(axMapControl1);
+            axMapControl1.Map.Name = "图层";
+            axMapControl1.ActiveView.ContentsChanged();
+            #endregion
+            //初始化皮肤，绑定皮肤控件
+            DevExpress.XtraBars.Helpers.SkinHelper.InitSkinGallery(ribbonGallery, true);
+        }
+
+        private void FrmMapMain_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            try
+            {
+                //保存皮肤设置
+               RegistryInfo.FaceManager.SetValue(ribbonGallery.Gallery.GetCheckedItems()[0].Caption);
+            }
+            catch
+            { }
+            this.Dispose(true);
+            GC.Collect();
+        }
+        int n = 0;
+        private void btnCutRoadToPatch_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            //for (int i = 0; i < 10;i++ )
+            //{
+            //    Thread thread = new Thread(go);
+            //    thread.IsBackground = true;
+            //    thread.Start();
+            //}
+            StartWork();
+            FrmSplitRoad frmSplit = new FrmSplitRoad(axMapControl1);
+            frmSplit.Show();
+            this.WindowState = FormWindowState.Minimized;
+        }
+        //
+
+        private void go()
+        {
+            Thread.Sleep(1000);
+            n++;
+            if (n>=10)
+            {
+                MessageBox.Show("");
+            }
+        }
+        //
+        private void axMapControl1_OnMouseMove(object sender, IMapControlEvents2_OnMouseMoveEvent e)
+        {
+            lbCoordXY.Caption = e.mapX.ToString("0.00000") + "  " + e.mapY.ToString("0.00000") + MapUnit.GetMapUnit(axMapControl1);
+        }
+
+        private void axMapControl1_OnMapReplaced(object sender, IMapControlEvents2_OnMapReplacedEvent e)
+        {
+            if (axMapControl1.DocumentFilename!=null)
+            {
+                lbDocumentPath.Caption ="地图文档:"+ axMapControl1.DocumentFilename;
+            }
+        }
+
+#region 多线程测试
+
+        //多线程
+        IList<string> _TaskIds = new List<string>();
+        int _num = 0;
+        Dictionary<int, int> _dictionary = new Dictionary<int, int>();
+        IList<int> _noFindIds = new List<int>();
+        //LUtil.MultiBackgroundWorker mbg;
+        Stopwatch timer = new Stopwatch();
+        string GTaskId;
+        IList<string> where;
+        private void StartWork()
+        {
+            IFeatureClass f1 = FeatureClassHelper.OpenFeatureClass(@"E:\lsj\程序\备份\GDMapDataHandleSYS20150804\GDMapDataHandleSYS\bin\Debug\执行结果\分割后的道路面.shp");
+           
+            //timer.Start();//开始计算时间
+           // GetCount(f1);
+            _dictionary = new Dictionary<int, int>();
+
+            //GTaskId = new List<string>();
+
+            int count = f1.FeatureCount(null);
+             where = CreateFilter(count, 10000, f1.OIDFieldName);
+            Marshal.ReleaseComObject(f1);
+            _num = 0;
+            mbg = new LUtil.MultiBackgroundWorker();
+
+            mbg.DoWork += DoSomething;
+            mbg.RunWorkCompleted += WorkComplete;
+
+            //mbg.RunWorkCompleted += ExecuteComplete;
+
+            GTaskId = Guid.NewGuid().ToString();
+            mbg.RunWorkerAsync(GTaskId, null);
+
+            
+         
+        }
+        private void WorkComplete(object sender, LUtil.MultiRunWorkerCompletedEventArgs e)
+        {
+            if (e.TaskId==GTaskId)
+            {
+                for (int i = 0; i < where.Count; i++)
+                {
+                    string taskId = Guid.NewGuid().ToString();
+                    //_TaskIds.Add(taskId);
+                    mbg.RunWorkerAsync(taskId, where[i]);
+                }
+            }
+            else
+            {
+                _num++;
+                if (where.Count==_num)
+                {
+                    timer.Stop();
+                }
+            }
+            //_num++;
+            //if (_TaskIds.Count == _num)
+            //{
+          
+            //}
+        }
+
+        private void DoSomething(object sender, LUtil.MultiDoWorkEventArgs e)
+        {
+            IFeatureClass f1 = FeatureClassHelper.OpenFeatureClass(@"E:\lsj\程序\备份\GDMapDataHandleSYS20150804\GDMapDataHandleSYS\bin\Debug\执行结果\分割后的道路面.shp");
+
+            GetCount(f1, e.Argument as string);
+
+        }
+        private void GetCount(IFeatureClass f1,string where="")
+        {
+            IQueryFilter q=new QueryFilterClass();
+            q.WhereClause=where;
+            IFeatureCursor featureCursor = f1.Search(q, false);
+            IFeature feature = featureCursor.NextFeature();
+            while (feature!=null)
+            {
+                _dictionary.Add(feature.OID, feature.OID);
+                feature = featureCursor.NextFeature();
+            }
+            Marshal.ReleaseComObject(featureCursor);
+        }
+        //分段创建过滤条件
+        private IList<string> CreateFilter(int count, int interval, string fieldName = "FID")
+        {
+            IList<string> where = new List<string>();
+            if (interval >= count)
+            {
+                where.Add(fieldName + " <=" + count);
+            }
+            else
+            {
+                int n = count / interval;
+                where.Add(fieldName + " <" + interval);
+                for (int i = 1; i < n; i++)
+                {
+                    where.Add(fieldName + " >=" + interval * i + " and " + fieldName + " <" + interval * (i + 1));
+                }
+                if (count % interval != 0)
+                {
+                    where.Add(fieldName + " >=" + interval * n);
+                }
+            }
+            return where;
+        }
+#endregion
+    }
+}
