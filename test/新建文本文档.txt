@@ -24,15 +24,15 @@ namespace GDMapDataHandleSYS
         public FrmMapMain()
         {
             InitializeComponent();
-            #region ³õÊ¼»¯µØÍ¼¹¤¾ß
+            #region åˆå§‹åŒ–åœ°å›¾å·¥å…·
             contextMenu = new TOCContextMenu(axMapControl1, axTOCControl1);
             mapEventManage = new MapEventManage(axMapControl1);
             MapToolbar.SetMapViewTool(axMapControl1, axToolbarControl2);
             new MapToolbar().SetMiddleMousePan(axMapControl1);
-            axMapControl1.Map.Name = "Í¼²ã";
+            axMapControl1.Map.Name = "å›¾å±‚";
             axMapControl1.ActiveView.ContentsChanged();
             #endregion
-            //³õÊ¼»¯Æ¤·ô£¬°ó¶¨Æ¤·ô¿Ø¼ş
+            //åˆå§‹åŒ–çš®è‚¤ï¼Œç»‘å®šçš®è‚¤æ§ä»¶
             DevExpress.XtraBars.Helpers.SkinHelper.InitSkinGallery(ribbonGallery, true);
         }
 
@@ -40,7 +40,7 @@ namespace GDMapDataHandleSYS
         {
             try
             {
-                //±£´æÆ¤·ôÉèÖÃ
+                //ä¿å­˜çš®è‚¤è®¾ç½®
                RegistryInfo.FaceManager.SetValue(ribbonGallery.Gallery.GetCheckedItems()[0].Caption);
             }
             catch
@@ -83,13 +83,13 @@ namespace GDMapDataHandleSYS
         {
             if (axMapControl1.DocumentFilename!=null)
             {
-                lbDocumentPath.Caption ="µØÍ¼ÎÄµµ:"+ axMapControl1.DocumentFilename;
+                lbDocumentPath.Caption ="åœ°å›¾æ–‡æ¡£:"+ axMapControl1.DocumentFilename;
             }
         }
 
-#region ¶àÏß³Ì²âÊÔ
+#region å¤šçº¿ç¨‹æµ‹è¯•
 
-        //¶àÏß³Ì
+        //å¤šçº¿ç¨‹
         IList<string> _TaskIds = new List<string>();
         int _num = 0;
         Dictionary<int, int> _dictionary = new Dictionary<int, int>();
@@ -100,9 +100,9 @@ namespace GDMapDataHandleSYS
         IList<string> where;
         private void StartWork()
         {
-            IFeatureClass f1 = FeatureClassHelper.OpenFeatureClass(@"E:\lsj\³ÌĞò\±¸·İ\GDMapDataHandleSYS20150804\GDMapDataHandleSYS\bin\Debug\Ö´ĞĞ½á¹û\·Ö¸îºóµÄµÀÂ·Ãæ.shp");
+            IFeatureClass f1 = FeatureClassHelper.OpenFeatureClass(@"E:\lsj\ç¨‹åº\å¤‡ä»½\GDMapDataHandleSYS20150804\GDMapDataHandleSYS\bin\Debug\æ‰§è¡Œç»“æœ\åˆ†å‰²åçš„é“è·¯é¢.shp");
            
-            //timer.Start();//¿ªÊ¼¼ÆËãÊ±¼ä
+            //timer.Start();//å¼€å§‹è®¡ç®—æ—¶é—´
            // GetCount(f1);
             _dictionary = new Dictionary<int, int>();
 
@@ -144,16 +144,12 @@ namespace GDMapDataHandleSYS
                     timer.Stop();
                 }
             }
-            //_num++;
-            //if (_TaskIds.Count == _num)
-            //{
-          
-            //}
+            
         }
 
         private void DoSomething(object sender, LUtil.MultiDoWorkEventArgs e)
         {
-            IFeatureClass f1 = FeatureClassHelper.OpenFeatureClass(@"E:\lsj\³ÌĞò\±¸·İ\GDMapDataHandleSYS20150804\GDMapDataHandleSYS\bin\Debug\Ö´ĞĞ½á¹û\·Ö¸îºóµÄµÀÂ·Ãæ.shp");
+            IFeatureClass f1 = FeatureClassHelper.OpenFeatureClass(@"E:\lsj\ç¨‹åº\å¤‡ä»½\GDMapDataHandleSYS20150804\GDMapDataHandleSYS\bin\Debug\æ‰§è¡Œç»“æœ\åˆ†å‰²åçš„é“è·¯é¢.shp");
 
             GetCount(f1, e.Argument as string);
 
@@ -171,7 +167,7 @@ namespace GDMapDataHandleSYS
             }
             Marshal.ReleaseComObject(featureCursor);
         }
-        //·Ö¶Î´´½¨¹ıÂËÌõ¼ş
+        //åˆ†æ®µåˆ›å»ºè¿‡æ»¤æ¡ä»¶
         private IList<string> CreateFilter(int count, int interval, string fieldName = "FID")
         {
             IList<string> where = new List<string>();
